@@ -1,5 +1,3 @@
---!strict
-
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -366,8 +364,39 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
+local function updateHudScale()
+	local hudGui = PlayerGui:FindFirstChild("HudGui")
+	if not hudGui then return end
 
+	local viewport = Camera.ViewportSize
+	local leftHud = hudGui:FindFirstChild("LeftHud")
+	local rightHud = hudGui:FindFirstChild("RightHud")
+	local cashDisplay = hudGui:FindFirstChild("CashDisplay")
 
+	-- RightHud design height is 390px; ensure it fits within 90% of screen height
+	if rightHud then
+		local rightScale = rightHud:FindFirstChild("HudScale") :: UIScale?
+		if rightScale then
+			rightScale.Scale = math.clamp((viewport.Y * 0.90) / 390, 0.45, 1.0)
+		end
+	end
+
+	-- LeftHud design height is 318px
+	if leftHud then
+		local leftScale = leftHud:FindFirstChild("HudScale") :: UIScale?
+		if leftScale then
+			leftScale.Scale = math.clamp((viewport.Y * 0.90) / 318, 0.45, 1.0)
+		end
+	end
+
+	-- CashDisplay matches LeftHud scale so icon and text match
+	if cashDisplay then
+		local cashScale = cashDisplay:FindFirstChild("HudScale") :: UIScale?
+		if cashScale then
+			cashScale.Scale = math.clamp((viewport.Y * 0.90) / 318, 0.55, 1.0)
+		end
+	end
+end
 
 local activeSpotlights = {}
 
@@ -383,8 +412,6 @@ local function startAmbientSpotlight(spotlight: ImageLabel)
 	local tween = TweenService:Create(spotlight, tweenInfo, { Rotation = targetRotation })
 	tween:Play()
 end
-
-
 
 
 local function processInstance(inst: Instance)
@@ -425,6 +452,8 @@ PlayerGui.DescendantAdded:Connect(function(descendant)
 	end)
 end)
 
+task.defer(updateHudScale)
+Camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateHudScale)
 
 Camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
 	for _, data in pairs(managedWindows) do
